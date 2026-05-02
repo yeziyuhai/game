@@ -85,7 +85,15 @@ io.on('connection', (socket) => {
         blueConnected: players.some(p => p.color === 'blue'),
         redConnected: players.some(p => p.color === 'red')
     });
-    
+    socket.on('move_down', () => {
+    if (gameActive && gameState.players[color]) {
+        const p = gameState.players[color];
+        // 向下移动：增加 Y 坐标，让角色掉到下层平台
+        p.y += 45;
+        p.velY = 0;
+        console.log('下平台:', color);
+    }
+});
     socket.on('player_ready', () => {
         readyState[color] = true;
         console.log('玩家准备:', color);
