@@ -1,4 +1,4 @@
-// public/js/main.js - 游戏主入口（完整版）
+// public/js/main.js - 游戏主入口（完整版，支持上下平台）
 (function() {
     console.log('Main.js 启动, 当前路径:', window.location.pathname);
     
@@ -212,10 +212,18 @@ function startGame() {
     
     controls.onJump = () => {
         if (game.gameActive && myColor) {
-            console.log('发送跳跃');
+            console.log('发送跳跃（上平台）');
             network.sendJump();
         }
     };
+    
+    // 下平台回调
+    controls.setOnDown(() => {
+        if (game.gameActive && myColor) {
+            console.log('发送下平台');
+            network.sendMoveDown();
+        }
+    });
     
     // 定期发送移动指令
     moveInterval = setInterval(() => {
