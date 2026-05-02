@@ -3,73 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="screen-orientation" content="landscape">
-    <meta name="x5-orientation" content="landscape">
-    <meta name="full-screen" content="yes">
     <title>混乱大枪战 - 对战</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
-        
-        body { 
-            background: #0a0f1e; 
-            overflow: hidden; 
-            position: fixed; 
-            width: 100%; 
-            height: 100%;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            touch-action: manipulation;
         }
-        
-        /* 游戏容器 - 固定尺寸居中 */
-        .game-wrapper {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100%;
-            height: 100%;
+
+        body {
+            background: #0a0f1e;
+            min-height: 100vh;
             display: flex;
-            align-items: center;
             justify-content: center;
-            background: #1a2a3a;
+            align-items: center;
+            font-family: system-ui, 'Segoe UI', sans-serif;
         }
-        
-        #gameCanvas { 
-            width: auto;
-            height: 100%;
-            max-width: 100%;
-            background: linear-gradient(180deg, #1a2a3a, #0f1a24);
-            display: block;
-        }
-        
-        /* 游戏固定尺寸 750x650 */
+
+        /* 游戏主容器 */
         .game-container {
             position: relative;
-            width: 750px;
-            height: 650px;
+            width: 100%;
+            max-width: 750px;
             margin: 0 auto;
+            background: #1a2a3a;
+            border-radius: 20px;
+            overflow: hidden;
         }
-        
-        /* 缩放适配手机屏幕 */
-        @media (max-width: 800px) {
-            .game-container {
-                transform: scale(0.95);
-            }
+
+        /* Canvas 画布 - 固定尺寸 750x650，手机自动缩放 */
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: linear-gradient(180deg, #1a2a3a, #0f1a24);
+            cursor: pointer;
+            touch-action: none;
         }
-        @media (max-width: 750px) {
-            .game-container {
-                transform: scale(0.9);
-            }
-        }
-        @media (max-width: 700px) {
-            .game-container {
-                transform: scale(0.85);
-            }
-        }
-        @media (max-width: 650px) {
-            .game-container {
-                transform: scale(0.8);
-            }
-        }
-        
+
+        /* 血条区域 */
         .health-bars {
             position: absolute;
             top: 10px;
@@ -77,7 +51,7 @@
             right: 0;
             display: flex;
             justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 15px;
             color: white;
             font-weight: bold;
             font-size: 14px;
@@ -85,8 +59,8 @@
             z-index: 10;
             pointer-events: none;
         }
-        
-        /* 方向按钮区域 */
+
+        /* 控制区域 */
         .controls {
             position: absolute;
             bottom: 15px;
@@ -94,35 +68,31 @@
             right: 0;
             display: flex;
             justify-content: space-between;
-            padding: 0 15px;
-            pointer-events: none;
+            padding: 0 10px;
             z-index: 10;
+            pointer-events: none;
         }
-        
-        /* 左边方向按钮 十字键 */
-        .direction-pad {
+
+        /* 方向键区域 */
+        .dpad {
             display: flex;
             flex-direction: column;
-            align-items: center;
             gap: 8px;
             pointer-events: auto;
-            background: rgba(0,0,0,0.5);
-            border-radius: 20px;
-            padding: 12px;
         }
-        
-        .direction-row {
+
+        .dpad-row {
             display: flex;
-            gap: 12px;
             justify-content: center;
+            gap: 12px;
         }
-        
-        .dir-btn {
+
+        .dpad-btn {
             width: 60px;
             height: 60px;
             border-radius: 50%;
-            background: rgba(0,0,0,0.7);
-            border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(0, 0, 0, 0.65);
+            border: 2px solid rgba(255, 255, 255, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -130,64 +100,70 @@
             font-weight: bold;
             color: white;
             cursor: pointer;
-            transition: 0.05s;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+            transition: 0.05s linear;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
         }
-        
-        .dir-btn:active {
+
+        .dpad-btn:active {
             transform: scale(0.92);
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.35);
         }
-        
-        /* 右边按钮 */
-        .right-buttons {
+
+        /* 右侧按钮 */
+        .action-buttons {
             display: flex;
             gap: 15px;
             pointer-events: auto;
         }
-        
+
         .action-btn {
-            width: 70px;
-            height: 70px;
+            width: 65px;
+            height: 65px;
             border-radius: 50%;
-            background: rgba(0,0,0,0.7);
-            border: 3px solid rgba(255,255,255,0.8);
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid rgba(255, 255, 255, 0.8);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
+            font-size: 30px;
             cursor: pointer;
-            transition: 0.05s;
-            box-shadow: 0 3px 5px rgba(0,0,0,0.3);
+            transition: 0.05s linear;
+            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
         }
-        
+
         .action-btn:active {
             transform: scale(0.92);
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.35);
         }
-        
+
+        /* 胜利弹窗 */
         .result-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0, 0, 0, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 100;
+            border-radius: 20px;
         }
-        
+
         .result-card {
-            background: rgba(0,0,0,0.95);
-            border-radius: 48px;
-            padding: 35px;
+            background: #1a1a2e;
+            border-radius: 40px;
+            padding: 30px 40px;
             text-align: center;
             border: 2px solid gold;
         }
-        
-        .result-card h1 { font-size: 28px; margin-bottom: 15px; }
+
+        .result-card h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
         .result-btn {
             background: #5f27cd;
             border: none;
@@ -195,65 +171,370 @@
             border-radius: 40px;
             font-size: 16px;
             color: white;
-            margin-top: 20px;
+            margin-top: 15px;
             cursor: pointer;
         }
-        
+
         /* 提示文字 */
-        .tip {
+        .game-tip {
             position: absolute;
-            bottom: 5px;
+            bottom: 8px;
             left: 0;
             right: 0;
             text-align: center;
-            color: rgba(255,255,255,0.4);
+            color: rgba(255, 255, 255, 0.4);
             font-size: 10px;
             pointer-events: none;
+            z-index: 10;
+        }
+
+        @media (max-width: 600px) {
+            .dpad-btn, .action-btn { width: 55px; height: 55px; font-size: 24px; }
+            .health-bars { font-size: 12px; top: 5px; }
         }
     </style>
 </head>
 <body>
-<div class="game-wrapper">
-    <div class="game-container">
-        <canvas id="gameCanvas" width="750" height="650"></canvas>
+<div class="game-container">
+    <canvas id="gameCanvas" width="750" height="650"></canvas>
 
-        <div class="health-bars">
-            <div>🔵 蓝方 ❤️<span id="blueLives">3</span> HP:<span id="blueHp">30</span></div>
-            <div>🔴 红方 ❤️<span id="redLives">3</span> HP:<span id="redHp">30</span></div>
-        </div>
-
-        <div class="controls">
-            <!-- 左边：十字方向键 -->
-            <div class="direction-pad">
-                <div class="direction-row">
-                    <div class="dir-btn" id="btnUp">⬆️</div>
-                </div>
-                <div class="direction-row">
-                    <div class="dir-btn" id="btnLeft">⬅️</div>
-                    <div class="dir-btn" id="btnDown">⬇️</div>
-                    <div class="dir-btn" id="btnRight">➡️</div>
-                </div>
-            </div>
-            
-            <!-- 右边：射击 + 跳跃 -->
-            <div class="right-buttons">
-                <div class="action-btn" id="shootBtn">🔫</div>
-                <div class="action-btn" id="jumpBtn">🦘</div>
-            </div>
-        </div>
-        <div class="tip">上下移动平台 | 左右移动 | 射击击败对手</div>
+    <div class="health-bars">
+        <div>🔵 蓝方 ❤️ <span id="blueLives">3</span> HP:<span id="blueHp">30</span></div>
+        <div>🔴 红方 ❤️ <span id="redLives">3</span> HP:<span id="redHp">30</span></div>
     </div>
+
+    <div class="controls">
+        <div class="dpad">
+            <div class="dpad-row">
+                <div class="dpad-btn" id="btnUp">⬆️</div>
+            </div>
+            <div class="dpad-row">
+                <div class="dpad-btn" id="btnLeft">⬅️</div>
+                <div class="dpad-btn" id="btnDown">⬇️</div>
+                <div class="dpad-btn" id="btnRight">➡️</div>
+            </div>
+        </div>
+        <div class="action-buttons">
+            <div class="action-btn" id="shootBtn">🔫</div>
+            <div class="action-btn" id="jumpBtn">🦘</div>
+        </div>
+    </div>
+    <div class="game-tip">⬅️➡️移动 | ⬆️上平台 | ⬇️下平台 | 🔫射击</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="/shared/constants.js"></script>
-<script src="/js/player.js"></script>
-<script src="/js/bullet.js"></script>
-<script src="/js/platform.js"></script>
-<script src="/js/controls.js"></script>
-<script src="/js/network.js"></script>
-<script src="/js/renderer.js"></script>
-<script src="/js/gameLogic.js"></script>
-<script src="/js/main.js"></script>
+<script>
+    // ==================== 游戏配置 ====================
+    const GAME_WIDTH = 750;
+    const GAME_HEIGHT = 650;
+    
+    // 平台定义（从上到下：Y坐标越小越高）
+    const PLATFORMS = [
+        { x: 280, y: 220, width: 180, height: 12 },   // 最高层
+        { x: 280, y: 320, width: 180, height: 12 },   // 第三层
+        { x: 100, y: 420, width: 150, height: 12 },   // 左二层
+        { x: 500, y: 420, width: 150, height: 12 },   // 右二层
+        { x: 50, y: 520, width: 150, height: 12 },    // 左一层
+        { x: 550, y: 520, width: 150, height: 12 },   // 右一层
+        { x: 0, y: 620, width: 750, height: 15 }       // 地面
+    ];
+    
+    // 按Y坐标排序，用于平台上下移动
+    const SORTED_PLATFORMS = [...PLATFORMS].sort((a, b) => a.y - b.y);
+    
+    // ==================== 全局变量 ====================
+    let socket = io();
+    let myColor = null;
+    let gameActive = true;
+    
+    let players = {
+        blue: { x: 100, y: 500, hp: 30, lives: 3, color: 'blue', facingRight: true },
+        red: { x: 620, y: 500, hp: 30, lives: 3, color: 'red', facingRight: false }
+    };
+    let bullets = [];
+    
+    let moveLeft = false;
+    let moveRight = false;
+    
+    // Canvas 元素
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // UI 元素
+    const blueHpSpan = document.getElementById('blueHp');
+    const blueLivesSpan = document.getElementById('blueLives');
+    const redHpSpan = document.getElementById('redHp');
+    const redLivesSpan = document.getElementById('redLives');
+    
+    // ==================== 辅助函数 ====================
+    function updateUI() {
+        if (players.blue) {
+            blueHpSpan.textContent = players.blue.hp;
+            blueLivesSpan.textContent = players.blue.lives;
+        }
+        if (players.red) {
+            redHpSpan.textContent = players.red.hp;
+            redLivesSpan.textContent = players.red.lives;
+        }
+    }
+    
+    // 获取玩家当前所在的平台Y坐标
+    function getCurrentPlatformY(playerY) {
+        let closestY = 620; // 默认地面
+        for (let p of PLATFORMS) {
+            // 如果玩家站在这个平台上（Y坐标接近平台顶部）
+            if (Math.abs(playerY + 30 - p.y) < 5) {
+                return p.y;
+            }
+        }
+        // 找玩家下方的平台
+        for (let p of PLATFORMS) {
+            if (playerY + 30 <= p.y && p.y < closestY) {
+                closestY = p.y;
+            }
+        }
+        return closestY;
+    }
+    
+    // 获取上一层平台的Y坐标
+    function getUpperPlatformY(currentY) {
+        let upperY = null;
+        for (let p of SORTED_PLATFORMS) {
+            if (p.y < currentY) {
+                upperY = p.y;
+            } else {
+                break;
+            }
+        }
+        return upperY;
+    }
+    
+    // 获取下一层平台的Y坐标
+    function getLowerPlatformY(currentY) {
+        for (let p of SORTED_PLATFORMS) {
+            if (p.y > currentY) {
+                return p.y;
+            }
+        }
+        return currentY;
+    }
+    
+    // 跳转到上一层平台
+    function jumpToUpperPlatform(player) {
+        const currentY = getCurrentPlatformY(player.y);
+        const upperY = getUpperPlatformY(currentY);
+        if (upperY !== null) {
+            player.y = upperY - 30;
+            console.log('跳上平台:', upperY);
+            return true;
+        }
+        return false;
+    }
+    
+    // 掉到下一层平台
+    function dropToLowerPlatform(player) {
+        const currentY = getCurrentPlatformY(player.y);
+        const lowerY = getLowerPlatformY(currentY);
+        if (lowerY !== currentY && lowerY !== null) {
+            player.y = lowerY - 30;
+            console.log('掉下平台:', lowerY);
+            return true;
+        }
+        return false;
+    }
+    
+    // ==================== 绘制函数 ====================
+    function drawPlatforms() {
+        for (let p of PLATFORMS) {
+            ctx.fillStyle = '#8B7355';
+            ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.fillStyle = '#A0896C';
+            ctx.fillRect(p.x + 2, p.y - 3, p.width - 4, 5);
+        }
+    }
+    
+    function drawPlayer(p) {
+        if (!p) return;
+        ctx.fillStyle = p.color === 'blue' ? '#4a90d9' : '#e74c3c';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = p.color === 'blue' ? '#4a90d9' : '#e74c3c';
+        ctx.fillRect(p.x, p.y, 30, 30);
+        ctx.shadowBlur = 0;
+        
+        // 眼睛（方向）
+        ctx.fillStyle = 'white';
+        const eyeX = p.facingRight ? p.x + 22 : p.x + 8;
+        ctx.fillRect(eyeX - 4, p.y + 8, 6, 6);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(eyeX - 3, p.y + 9, 4, 4);
+        
+        // 血条
+        const hpPercent = p.hp / 30;
+        ctx.fillStyle = '#333';
+        ctx.fillRect(p.x, p.y - 10, 30, 5);
+        ctx.fillStyle = p.color === 'blue' ? '#4a90d9' : '#e74c3c';
+        ctx.fillRect(p.x, p.y - 10, 30 * hpPercent, 5);
+        
+        // 名字
+        ctx.fillStyle = 'white';
+        ctx.font = '12px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(p.color === 'blue' ? '蓝方' : '红方', p.x + 15, p.y - 15);
+    }
+    
+    function drawBullet(b) {
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(b.x, b.y, 8, 5);
+        ctx.fillStyle = '#ffaa00';
+        ctx.fillRect(b.x + (b.direction > 0 ? 5 : 0), b.y, 3, 5);
+    }
+    
+    function drawGame() {
+        ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        
+        // 背景
+        ctx.fillStyle = '#1a2a3a';
+        ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        
+        drawPlatforms();
+        
+        for (let b of bullets) {
+            drawBullet(b);
+        }
+        
+        drawPlayer(players.blue);
+        drawPlayer(players.red);
+    }
+    
+    // ==================== 游戏循环 ====================
+    function gameLoop() {
+        if (!gameActive) {
+            drawGame();
+            requestAnimationFrame(gameLoop);
+            return;
+        }
+        
+        // 更新本地玩家移动
+        if (myColor && players[myColor]) {
+            let velX = 0;
+            if (moveLeft) velX = -4;
+            if (moveRight) velX = 4;
+            if (velX !== 0) {
+                players[myColor].x += velX;
+                // 边界限制
+                if (players[myColor].x < 20) players[myColor].x = 20;
+                if (players[myColor].x + 30 > 720) players[myColor].x = 720 - 30;
+                players[myColor].facingRight = velX > 0;
+                socket.emit('move', { velX: velX, x: players[myColor].x });
+            }
+        }
+        
+        drawGame();
+        requestAnimationFrame(gameLoop);
+    }
+    
+    // ==================== Socket 事件 ====================
+    socket.on('connect', () => {
+        console.log('Socket 连接成功');
+    });
+    
+    socket.on('role_assign', (data) => {
+        myColor = data.color;
+        console.log('我的角色:', myColor);
+    });
+    
+    socket.on('game_state', (state) => {
+        if (state && state.players) {
+            players = state.players;
+            bullets = state.bullets || [];
+            updateUI();
+        }
+    });
+    
+    socket.on('game_over', (data) => {
+        gameActive = false;
+        const isWinner = (data.winner === myColor);
+        const resultDiv = document.createElement('div');
+        resultDiv.className = 'result-overlay';
+        resultDiv.innerHTML = `
+            <div class="result-card">
+                <h1 style="color: ${isWinner ? '#ffd700' : '#e74c3c'}">${isWinner ? '🏆 胜利！ 🏆' : '💀 失败... 💀'}</h1>
+                <button class="result-btn" id="returnBtn">返回房间</button>
+            </div>
+        `;
+        document.querySelector('.game-container').appendChild(resultDiv);
+        document.getElementById('returnBtn').onclick = () => {
+            socket.emit('return_to_room');
+            window.location.href = '/';
+        };
+    });
+    
+    socket.on('redirect_to_room', () => {
+        window.location.href = '/';
+    });
+    
+    // ==================== 控制按钮绑定 ====================
+    // 左移
+    const leftBtn = document.getElementById('btnLeft');
+    leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; });
+    leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); moveLeft = false; });
+    leftBtn.addEventListener('mousedown', () => { moveLeft = true; });
+    leftBtn.addEventListener('mouseup', () => { moveLeft = false; });
+    
+    // 右移
+    const rightBtn = document.getElementById('btnRight');
+    rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; });
+    rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); moveRight = false; });
+    rightBtn.addEventListener('mousedown', () => { moveRight = true; });
+    rightBtn.addEventListener('mouseup', () => { moveRight = false; });
+    
+    // 上平台（跳跃）
+    const upBtn = document.getElementById('btnUp');
+    const jumpBtn = document.getElementById('jumpBtn');
+    
+    function doJump() {
+        if (!gameActive || !myColor || !players[myColor]) return;
+        const success = jumpToUpperPlatform(players[myColor]);
+        if (success) {
+            socket.emit('move_up', { y: players[myColor].y });
+        }
+    }
+    
+    upBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); });
+    upBtn.addEventListener('mousedown', () => { doJump(); });
+    jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); });
+    jumpBtn.addEventListener('mousedown', () => { doJump(); });
+    
+    // 下平台
+    const downBtn = document.getElementById('btnDown');
+    function doDown() {
+        if (!gameActive || !myColor || !players[myColor]) return;
+        const success = dropToLowerPlatform(players[myColor]);
+        if (success) {
+            socket.emit('move_down', { y: players[myColor].y });
+        }
+    }
+    downBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doDown(); });
+    downBtn.addEventListener('mousedown', () => { doDown(); });
+    
+    // 射击
+    const shootBtn = document.getElementById('shootBtn');
+    function doShoot() {
+        if (!gameActive || !myColor || !players[myColor]) return;
+        const p = players[myColor];
+        socket.emit('shoot', {
+            x: p.x + 15,
+            y: p.y + 15,
+            direction: p.facingRight ? 1 : -1,
+            owner: myColor
+        });
+    }
+    shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doShoot(); });
+    shootBtn.addEventListener('mousedown', () => { doShoot(); });
+    
+    // 启动游戏
+    gameLoop();
+    console.log('游戏已启动');
+</script>
 </body>
 </html>
