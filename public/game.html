@@ -20,30 +20,34 @@
             justify-content: center;
             align-items: center;
             font-family: system-ui, 'Segoe UI', sans-serif;
+            padding: 10px;
         }
 
-        /* 游戏主容器 */
-        .game-container {
-            position: relative;
+        /* 游戏主容器 - 竖屏布局 */
+        .game-wrapper {
             width: 100%;
-            max-width: 750px;
-            margin: 0 auto;
+            max-width: 400px;
             background: #1a2a3a;
-            border-radius: 20px;
+            border-radius: 24px;
             overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        /* Canvas 画布 - 固定尺寸 750x650，手机自动缩放 */
+        /* 游戏画布区域 */
+        .canvas-area {
+            background: #1a2a3a;
+            position: relative;
+        }
+
         canvas {
             display: block;
             width: 100%;
             height: auto;
             background: linear-gradient(180deg, #1a2a3a, #0f1a24);
             cursor: pointer;
-            touch-action: none;
         }
 
-        /* 血条区域 */
+        /* 血条区域 - 悬浮在画布上 */
         .health-bars {
             position: absolute;
             top: 10px;
@@ -54,45 +58,34 @@
             padding: 0 15px;
             color: white;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
             text-shadow: 1px 1px 0 black;
             z-index: 10;
             pointer-events: none;
         }
 
-        /* 控制区域 */
-        .controls {
-            position: absolute;
-            bottom: 15px;
-            left: 0;
-            right: 0;
+        /* 控制面板 - 按钮区域 */
+        .control-panel {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
-            padding: 0 10px;
-            z-index: 10;
-            pointer-events: none;
+            align-items: center;
+            backdrop-filter: blur(5px);
         }
 
         /* 方向键区域 */
-        .dpad {
+        .direction-area {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            pointer-events: auto;
-        }
-
-        .dpad-row {
-            display: flex;
-            justify-content: center;
             gap: 12px;
         }
 
-        .dpad-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.65);
-            border: 2px solid rgba(255, 255, 255, 0.5);
+        .dir-btn {
+            width: 65px;
+            height: 65px;
+            border-radius: 16px;
+            background: rgba(30, 40, 50, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -101,44 +94,60 @@
             color: white;
             cursor: pointer;
             transition: 0.05s linear;
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 0 #0a0f1e;
         }
 
-        .dpad-btn:active {
-            transform: scale(0.92);
-            background: rgba(255, 255, 255, 0.35);
+        .dir-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #0a0f1e;
+            background: rgba(100, 120, 140, 0.9);
         }
 
-        /* 右侧按钮 */
-        .action-buttons {
+        /* 右侧按钮区域 */
+        .action-area {
             display: flex;
             gap: 15px;
-            pointer-events: auto;
         }
 
         .action-btn {
-            width: 65px;
-            height: 65px;
-            border-radius: 50%;
-            background: rgba(0, 0, 0, 0.7);
-            border: 3px solid rgba(255, 255, 255, 0.8);
+            width: 70px;
+            height: 70px;
+            border-radius: 35px;
+            background: rgba(30, 40, 50, 0.9);
+            border: 2px solid rgba(255, 255, 255, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
+            font-size: 32px;
             cursor: pointer;
             transition: 0.05s linear;
-            box-shadow: 0 3px 5px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 4px 0 #0a0f1e;
         }
 
         .action-btn:active {
-            transform: scale(0.92);
-            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #0a0f1e;
+            background: rgba(100, 120, 140, 0.9);
+        }
+
+        /* 射击按钮特殊颜色 */
+        .shoot-btn {
+            background: rgba(200, 60, 50, 0.9);
+            border-color: #ffaa88;
+        }
+
+        /* 提示文字 */
+        .game-tip {
+            background: rgba(0, 0, 0, 0.5);
+            text-align: center;
+            color: #aaa;
+            font-size: 10px;
+            padding: 5px;
         }
 
         /* 胜利弹窗 */
         .result-overlay {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
@@ -148,7 +157,6 @@
             align-items: center;
             justify-content: center;
             z-index: 100;
-            border-radius: 20px;
         }
 
         .result-card {
@@ -174,72 +182,52 @@
             margin-top: 15px;
             cursor: pointer;
         }
-
-        /* 提示文字 */
-        .game-tip {
-            position: absolute;
-            bottom: 8px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 10px;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        @media (max-width: 600px) {
-            .dpad-btn, .action-btn { width: 55px; height: 55px; font-size: 24px; }
-            .health-bars { font-size: 12px; top: 5px; }
-        }
     </style>
 </head>
 <body>
-<div class="game-container">
-    <canvas id="gameCanvas" width="750" height="650"></canvas>
-
-    <div class="health-bars">
-        <div>🔵 蓝方 ❤️ <span id="blueLives">3</span> HP:<span id="blueHp">30</span></div>
-        <div>🔴 红方 ❤️ <span id="redLives">3</span> HP:<span id="redHp">30</span></div>
+<div class="game-wrapper">
+    <div class="canvas-area">
+        <canvas id="gameCanvas" width="400" height="500"></canvas>
+        <div class="health-bars">
+            <div>🔵 蓝方 ❤️ <span id="blueLives">3</span> HP:<span id="blueHp">30</span></div>
+            <div>🔴 红方 ❤️ <span id="redLives">3</span> HP:<span id="redHp">30</span></div>
+        </div>
     </div>
 
-    <div class="controls">
-        <div class="dpad">
-            <div class="dpad-row">
-                <div class="dpad-btn" id="btnUp">⬆️</div>
-            </div>
-            <div class="dpad-row">
-                <div class="dpad-btn" id="btnLeft">⬅️</div>
-                <div class="dpad-btn" id="btnDown">⬇️</div>
-                <div class="dpad-btn" id="btnRight">➡️</div>
-            </div>
+    <div class="control-panel">
+        <div class="direction-area">
+            <div class="dir-btn" id="btnLeft">◀</div>
+            <div class="dir-btn" id="btnRight">▶</div>
+            <div class="dir-btn" id="btnUp">▲</div>
+            <div class="dir-btn" id="btnDown">▼</div>
         </div>
-        <div class="action-buttons">
-            <div class="action-btn" id="shootBtn">🔫</div>
+        <div class="action-area">
+            <div class="action-btn shoot-btn" id="shootBtn">🔫</div>
             <div class="action-btn" id="jumpBtn">🦘</div>
         </div>
     </div>
-    <div class="game-tip">⬅️➡️移动 | ⬆️上平台 | ⬇️下平台 | 🔫射击</div>
+    <div class="game-tip">◀▶左右移动 | ▲上台阶 | ▼下台阶 | 🔫射击 | 🦘跳跃</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     // ==================== 游戏配置 ====================
-    const GAME_WIDTH = 750;
-    const GAME_HEIGHT = 650;
+    const GAME_WIDTH = 400;
+    const GAME_HEIGHT = 500;
     
-    // 平台定义（从上到下：Y坐标越小越高）
+    // 平台定义（高度和角色一样高，跳跃即可站上去）
+    // Y坐标：角色高度30，平台高度10
     const PLATFORMS = [
-        { x: 280, y: 220, width: 180, height: 12 },   // 最高层
-        { x: 280, y: 320, width: 180, height: 12 },   // 第三层
-        { x: 100, y: 420, width: 150, height: 12 },   // 左二层
-        { x: 500, y: 420, width: 150, height: 12 },   // 右二层
-        { x: 50, y: 520, width: 150, height: 12 },    // 左一层
-        { x: 550, y: 520, width: 150, height: 12 },   // 右一层
-        { x: 0, y: 620, width: 750, height: 15 }       // 地面
+        { x: 0, y: 470, width: 400, height: 10 },      // 地面
+        { x: 50, y: 400, width: 120, height: 10 },     // 左一层
+        { x: 230, y: 400, width: 120, height: 10 },    // 右一层
+        { x: 100, y: 330, width: 100, height: 10 },    // 左二层
+        { x: 200, y: 330, width: 100, height: 10 },    // 右二层
+        { x: 140, y: 260, width: 120, height: 10 },    // 三层
+        { x: 140, y: 190, width: 120, height: 10 }     // 四层（最高）
     ];
     
-    // 按Y坐标排序，用于平台上下移动
+    // 按Y坐标排序的平台
     const SORTED_PLATFORMS = [...PLATFORMS].sort((a, b) => a.y - b.y);
     
     // ==================== 全局变量 ====================
@@ -248,13 +236,17 @@
     let gameActive = true;
     
     let players = {
-        blue: { x: 100, y: 500, hp: 30, lives: 3, color: 'blue', facingRight: true },
-        red: { x: 620, y: 500, hp: 30, lives: 3, color: 'red', facingRight: false }
+        blue: { x: 60, y: 440, hp: 30, lives: 3, color: 'blue', facingRight: true },
+        red: { x: 310, y: 440, hp: 30, lives: 3, color: 'red', facingRight: false }
     };
     let bullets = [];
     
-    let moveLeft = false;
-    let moveRight = false;
+    // 移动状态
+    let moveLeftPressed = false;
+    let moveRightPressed = false;
+    
+    // 防止重复发送移动
+    let lastSendTime = 0;
     
     // Canvas 元素
     const canvas = document.getElementById('gameCanvas');
@@ -278,22 +270,15 @@
         }
     }
     
-    // 获取玩家当前所在的平台Y坐标
+    // 获取玩家当前所在的平台Y坐标（站立位置）
     function getCurrentPlatformY(playerY) {
-        let closestY = 620; // 默认地面
         for (let p of PLATFORMS) {
-            // 如果玩家站在这个平台上（Y坐标接近平台顶部）
-            if (Math.abs(playerY + 30 - p.y) < 5) {
+            // 角色底部在平台上
+            if (playerY + 30 >= p.y && playerY + 30 <= p.y + 15) {
                 return p.y;
             }
         }
-        // 找玩家下方的平台
-        for (let p of PLATFORMS) {
-            if (playerY + 30 <= p.y && p.y < closestY) {
-                closestY = p.y;
-            }
-        }
-        return closestY;
+        return 470; // 默认地面
     }
     
     // 获取上一层平台的Y坐标
@@ -319,25 +304,31 @@
         return currentY;
     }
     
-    // 跳转到上一层平台
-    function jumpToUpperPlatform(player) {
-        const currentY = getCurrentPlatformY(player.y);
+    // 跳上上一层平台
+    function jumpUp() {
+        if (!gameActive || !myColor || !players[myColor]) return false;
+        const p = players[myColor];
+        const currentY = getCurrentPlatformY(p.y);
         const upperY = getUpperPlatformY(currentY);
         if (upperY !== null) {
-            player.y = upperY - 30;
+            p.y = upperY - 30;
             console.log('跳上平台:', upperY);
+            socket.emit('move_up', { y: p.y });
             return true;
         }
         return false;
     }
     
-    // 掉到下一层平台
-    function dropToLowerPlatform(player) {
-        const currentY = getCurrentPlatformY(player.y);
+    // 下到下一层平台
+    function jumpDown() {
+        if (!gameActive || !myColor || !players[myColor]) return false;
+        const p = players[myColor];
+        const currentY = getCurrentPlatformY(p.y);
         const lowerY = getLowerPlatformY(currentY);
         if (lowerY !== currentY && lowerY !== null) {
-            player.y = lowerY - 30;
-            console.log('掉下平台:', lowerY);
+            p.y = lowerY - 30;
+            console.log('下到平台:', lowerY);
+            socket.emit('move_down', { y: p.y });
             return true;
         }
         return false;
@@ -346,24 +337,31 @@
     // ==================== 绘制函数 ====================
     function drawPlatforms() {
         for (let p of PLATFORMS) {
+            // 平台主体
             ctx.fillStyle = '#8B7355';
             ctx.fillRect(p.x, p.y, p.width, p.height);
-            ctx.fillStyle = '#A0896C';
-            ctx.fillRect(p.x + 2, p.y - 3, p.width - 4, 5);
+            // 平台顶部高亮
+            ctx.fillStyle = '#C4A882';
+            ctx.fillRect(p.x + 2, p.y - 2, p.width - 4, 3);
+            // 平台阴影
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fillRect(p.x, p.y + p.height, p.width, 3);
         }
     }
     
     function drawPlayer(p) {
         if (!p) return;
+        
+        // 身体
         ctx.fillStyle = p.color === 'blue' ? '#4a90d9' : '#e74c3c';
-        ctx.shadowBlur = 8;
+        ctx.shadowBlur = 5;
         ctx.shadowColor = p.color === 'blue' ? '#4a90d9' : '#e74c3c';
-        ctx.fillRect(p.x, p.y, 30, 30);
+        ctx.fillRect(p.x, p.y, 28, 28);
         ctx.shadowBlur = 0;
         
-        // 眼睛（方向）
+        // 眼睛（方向指示）
         ctx.fillStyle = 'white';
-        const eyeX = p.facingRight ? p.x + 22 : p.x + 8;
+        const eyeX = p.facingRight ? p.x + 20 : p.x + 6;
         ctx.fillRect(eyeX - 4, p.y + 8, 6, 6);
         ctx.fillStyle = 'black';
         ctx.fillRect(eyeX - 3, p.y + 9, 4, 4);
@@ -371,29 +369,32 @@
         // 血条
         const hpPercent = p.hp / 30;
         ctx.fillStyle = '#333';
-        ctx.fillRect(p.x, p.y - 10, 30, 5);
+        ctx.fillRect(p.x, p.y - 8, 28, 4);
         ctx.fillStyle = p.color === 'blue' ? '#4a90d9' : '#e74c3c';
-        ctx.fillRect(p.x, p.y - 10, 30 * hpPercent, 5);
+        ctx.fillRect(p.x, p.y - 8, 28 * hpPercent, 4);
         
         // 名字
         ctx.fillStyle = 'white';
-        ctx.font = '12px system-ui';
+        ctx.font = '10px system-ui';
         ctx.textAlign = 'center';
-        ctx.fillText(p.color === 'blue' ? '蓝方' : '红方', p.x + 15, p.y - 15);
+        ctx.fillText(p.color === 'blue' ? '蓝方' : '红方', p.x + 14, p.y - 12);
     }
     
     function drawBullet(b) {
         ctx.fillStyle = '#ffd700';
-        ctx.fillRect(b.x, b.y, 8, 5);
+        ctx.fillRect(b.x, b.y, 8, 4);
         ctx.fillStyle = '#ffaa00';
-        ctx.fillRect(b.x + (b.direction > 0 ? 5 : 0), b.y, 3, 5);
+        ctx.fillRect(b.x + (b.direction > 0 ? 5 : 0), b.y, 3, 4);
     }
     
     function drawGame() {
         ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         
-        // 背景
-        ctx.fillStyle = '#1a2a3a';
+        // 背景渐变
+        const grad = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+        grad.addColorStop(0, '#1a2a3a');
+        grad.addColorStop(1, '#0f1a24');
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
         
         drawPlatforms();
@@ -406,31 +407,35 @@
         drawPlayer(players.red);
     }
     
-    // ==================== 游戏循环 ====================
-    function gameLoop() {
-        if (!gameActive) {
-            drawGame();
-            requestAnimationFrame(gameLoop);
-            return;
+    // ==================== 移动逻辑 ====================
+    function updateMovement() {
+        if (!gameActive || !myColor || !players[myColor]) return;
+        
+        let moved = false;
+        const p = players[myColor];
+        
+        if (moveLeftPressed) {
+            p.x -= 4;
+            p.facingRight = false;
+            moved = true;
+        }
+        if (moveRightPressed) {
+            p.x += 4;
+            p.facingRight = true;
+            moved = true;
         }
         
-        // 更新本地玩家移动
-        if (myColor && players[myColor]) {
-            let velX = 0;
-            if (moveLeft) velX = -4;
-            if (moveRight) velX = 4;
-            if (velX !== 0) {
-                players[myColor].x += velX;
-                // 边界限制
-                if (players[myColor].x < 20) players[myColor].x = 20;
-                if (players[myColor].x + 30 > 720) players[myColor].x = 720 - 30;
-                players[myColor].facingRight = velX > 0;
-                socket.emit('move', { velX: velX, x: players[myColor].x });
+        // 边界限制
+        if (p.x < 10) p.x = 10;
+        if (p.x + 28 > 390) p.x = 390 - 28;
+        
+        if (moved) {
+            const now = Date.now();
+            if (now - lastSendTime > 30) {
+                lastSendTime = now;
+                socket.emit('move', { x: p.x, facingRight: p.facingRight });
             }
         }
-        
-        drawGame();
-        requestAnimationFrame(gameLoop);
     }
     
     // ==================== Socket 事件 ====================
@@ -462,7 +467,7 @@
                 <button class="result-btn" id="returnBtn">返回房间</button>
             </div>
         `;
-        document.querySelector('.game-container').appendChild(resultDiv);
+        document.body.appendChild(resultDiv);
         document.getElementById('returnBtn').onclick = () => {
             socket.emit('return_to_room');
             window.location.href = '/';
@@ -473,68 +478,60 @@
         window.location.href = '/';
     });
     
-    // ==================== 控制按钮绑定 ====================
+    // ==================== 按钮绑定 ====================
     // 左移
     const leftBtn = document.getElementById('btnLeft');
-    leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveLeft = true; });
-    leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); moveLeft = false; });
-    leftBtn.addEventListener('mousedown', () => { moveLeft = true; });
-    leftBtn.addEventListener('mouseup', () => { moveLeft = false; });
+    leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveLeftPressed = true; });
+    leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); moveLeftPressed = false; });
+    leftBtn.addEventListener('mousedown', () => { moveLeftPressed = true; });
+    leftBtn.addEventListener('mouseup', () => { moveLeftPressed = false; });
     
     // 右移
     const rightBtn = document.getElementById('btnRight');
-    rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveRight = true; });
-    rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); moveRight = false; });
-    rightBtn.addEventListener('mousedown', () => { moveRight = true; });
-    rightBtn.addEventListener('mouseup', () => { moveRight = false; });
+    rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); moveRightPressed = true; });
+    rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); moveRightPressed = false; });
+    rightBtn.addEventListener('mousedown', () => { moveRightPressed = true; });
+    rightBtn.addEventListener('mouseup', () => { moveRightPressed = false; });
     
-    // 上平台（跳跃）
+    // 上平台按钮
     const upBtn = document.getElementById('btnUp');
-    const jumpBtn = document.getElementById('jumpBtn');
+    upBtn.addEventListener('click', (e) => { e.preventDefault(); jumpUp(); });
+    upBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jumpUp(); });
     
-    function doJump() {
-        if (!gameActive || !myColor || !players[myColor]) return;
-        const success = jumpToUpperPlatform(players[myColor]);
-        if (success) {
-            socket.emit('move_up', { y: players[myColor].y });
-        }
-    }
-    
-    upBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); });
-    upBtn.addEventListener('mousedown', () => { doJump(); });
-    jumpBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doJump(); });
-    jumpBtn.addEventListener('mousedown', () => { doJump(); });
-    
-    // 下平台
+    // 下平台按钮
     const downBtn = document.getElementById('btnDown');
-    function doDown() {
-        if (!gameActive || !myColor || !players[myColor]) return;
-        const success = dropToLowerPlatform(players[myColor]);
-        if (success) {
-            socket.emit('move_down', { y: players[myColor].y });
-        }
-    }
-    downBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doDown(); });
-    downBtn.addEventListener('mousedown', () => { doDown(); });
+    downBtn.addEventListener('click', (e) => { e.preventDefault(); jumpDown(); });
+    downBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jumpDown(); });
     
-    // 射击
+    // 跳跃按钮（复用上平台）
+    const jumpActionBtn = document.getElementById('jumpBtn');
+    jumpActionBtn.addEventListener('click', (e) => { e.preventDefault(); jumpUp(); });
+    jumpActionBtn.addEventListener('touchstart', (e) => { e.preventDefault(); jumpUp(); });
+    
+    // 射击按钮
     const shootBtn = document.getElementById('shootBtn');
     function doShoot() {
         if (!gameActive || !myColor || !players[myColor]) return;
         const p = players[myColor];
         socket.emit('shoot', {
-            x: p.x + 15,
-            y: p.y + 15,
+            x: p.x + 14,
+            y: p.y + 14,
             direction: p.facingRight ? 1 : -1,
             owner: myColor
         });
     }
+    shootBtn.addEventListener('click', (e) => { e.preventDefault(); doShoot(); });
     shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); doShoot(); });
-    shootBtn.addEventListener('mousedown', () => { doShoot(); });
     
-    // 启动游戏
+    // ==================== 游戏循环 ====================
+    function gameLoop() {
+        updateMovement();
+        drawGame();
+        requestAnimationFrame(gameLoop);
+    }
+    
     gameLoop();
-    console.log('游戏已启动');
+    console.log('游戏已启动 - 竖屏版');
 </script>
 </body>
 </html>
