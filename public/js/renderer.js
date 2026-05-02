@@ -1,21 +1,29 @@
-// public/js/renderer.js - 渲染器
+// public/js/renderer.js - 渲染器（修复版）
 class Renderer {
     constructor(canvasId, platforms) {
         this.canvas = document.getElementById(canvasId);
         this.ctx = this.canvas.getContext('2d');
-        this.platforms = platforms;
+        this.platforms = platforms || [];
         this.resize();
         window.addEventListener('resize', () => this.resize());
+        window.addEventListener('orientationchange', () => setTimeout(() => this.resize(), 100));
     }
     
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // 获取实际显示尺寸
+        const container = this.canvas.parentElement;
+        this.canvas.width = container ? container.clientWidth : window.innerWidth;
+        this.canvas.height = container ? container.clientHeight : window.innerHeight;
+        
+        // 计算缩放比例（游戏逻辑基于 750x650）
         this.scaleX = this.canvas.width / 750;
         this.scaleY = this.canvas.height / 650;
+        
+        console.log('画布尺寸:', this.canvas.width, 'x', this.canvas.height);
     }
     
     drawPlatforms() {
+        if (!this.platforms) return;
         for (let p of this.platforms) {
             this.ctx.fillStyle = '#8B7355';
             this.ctx.fillRect(p.x, p.y, p.width, p.height);
@@ -25,6 +33,7 @@ class Renderer {
     }
     
     drawPlayer(p) {
+        if (!p) return;
         // 身体
         this.ctx.fillStyle = p.color === 'blue' ? '#4a90d9' : '#e74c3c';
         this.ctx.shadowBlur = 8;
@@ -32,7 +41,7 @@ class Renderer {
         this.ctx.fillRect(p.x, p.y, p.width, p.height);
         this.ctx.shadowBlur = 0;
         
-        // 眼睛（方向指示）
+        // 眼睛
         this.ctx.fillStyle = 'white';
         const eyeX = p.facingRight ? p.x + p.width - 8 : p.x + 8;
         this.ctx.fillRect(eyeX - 4, p.y + 8, 6, 6);
@@ -66,22 +75,30 @@ class Renderer {
         
         this.drawPlatforms();
         
-        for (let b of bullets) {
-            this.drawBullet(b);
+        if (bullets) {
+            for (let b of bullets) {
+                this.drawBullet(b);
+            }
         }
         
-        for (let id in players) {
-            this.drawPlayer(players[id]);
+        if (players) {
+            for (let id in players) {
+                this.drawPlayer(players[id]);
+            }
         }
     }
     
-    drawRoom(playersState) {
-        // 房间界面渲染（简单版）
+    drawRoom() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // 模糊背景
         this.ctx.fillStyle = 'rgba(0,0,0,0.7)';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.fillStyle = 'white';
-        this.ctx.font = '24px system-ui';
+        
+        // 装饰图案
+        this.ctx.fillStyle = '#ffd700';
+        this.ctx.font = `${Math.floor(this.canvas.width / 15)}px system-ui`;
         this.ctx.textAlign = 'center';
-        this.ctx.fillText('等待游戏开始...', this.canvas.width / 2, this.canvas.height / 2);
+        this.ctx.fillText('🎮', this.canvas.width / 2, this.canvas.height / 2 - 50);
     }
 }
