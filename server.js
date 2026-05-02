@@ -10,6 +10,7 @@ const io = socketIo(server, {
     transports: ['websocket', 'polling']
 });
 
+// 静态文件服务
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/shared', express.static(path.join(__dirname, 'shared')));
 
@@ -17,57 +18,93 @@ app.use('/shared', express.static(path.join(__dirname, 'shared')));
 let players = [];
 let readyState = { blue: false, red: false };
 let gameActive = false;
-let gameState = {
-    players: {},
-    bullets: []
-};
 
 // 平台定义
 const PLATFORMS = [
-    { x: 0, y: 590, width: 750, height: 15 },
-    { x: 50, y: 520, width: 130, height: 12 },
-    { x: 570, y: 520, width: 130, height: 12 },
-    { x: 120, y: 440, width: 110, height: 12 },
-    { x: 520, y: 440, width: 110, height: 12 },
-    { x: 310, y: 360, width: 130, height: 12 },
-    { x: 310, y: 280, width: 130, height: 12 }
+    { x: 0, y: 470, width: 400, height: 10 },
+    { x: 50, y: 400, width: 120, height: 10 },
+    { x: 230, y: 400, width: 120, height: 10 },
+    { x: 100, y: 330, width: 100, height: 10 },
+    { x: 200, y: 330, width: 100, height: 10 },
+    { x: 140, y: 260, width: 120, height: 10 },
+    { x: 140, y: 190, width: 120, height: 10 }
 ];
 
-// 创建玩家数据（纯对象，不是类实例，方便传输）
+// 创建玩家数据
 function createPlayerData(color, x, y) {
     return {
         color: color,
         name: color === 'blue' ? '蓝方' : '红方',
         x: x,
         y: y,
-        width: 30,
-        height: 30,
+        width: 28,
+        height: 28,
         hp: 30,
         maxHp: 30,
         lives: 3,
-        velX: 0,
-        velY: 0,
-        grounded: true,
-        facingRight: color === 'blue',
-        shootCooldown: 0
+        facingRight: color === 'blue'
     };
 }
 
+// 游戏状态
+let gameState = {
+    players: {},
+    bullets: []
+};
+
+// 重置游戏
 function resetGame() {
     gameActive = true;
     gameState = {
         players: {
-            blue: createPlayerData('blue', 100, 300),
-            red: createPlayerData('red', 620, 300)
+            blue: createPlayerData('blue', 60, 440),
+            red: createPlayerData('red', 310, 440)
         },
         bullets: []
     };
-    console.log('游戏重置，玩家位置:', gameState.players.blue.x, gameState.players.blue.y);
+    console.log('游戏重置，蓝方位置:', gameState.players.blue.x, gameState.players.blue.y);
+    console.log('红方位置:', gameState.players.red.x, gameState.players.red.y);
+}
+
+// 获取玩家当前所在的平台Y坐标
+function getCurrentPlatformY(playerY) {
+    for (let p of PLATFORMS) {
+        if (playerY + 28 >= p.y && playerY + 28 <= p.y + 15) {
+            return p.y;
+        }
+    }
+    return 470;
+}
+
+// 获取上一层平台的Y坐标
+function getUpperPlatformY(currentY) {
+    let upperY = null;
+    const sortedPlatforms = [...PLATFORMS].sort((a, b) => a.y - b.y);
+    for (let p of sortedPlatforms) {
+        if (p.y < currentY) {
+            upperY = p.y;
+        } else {
+            break;
+        }
+    }
+    return upperY;
+}
+
+// 获取下一层平台的Y坐标
+function getLowerPlatformY(currentY) {
+    const sortedPlatforms = [...PLATFORMS].sort((a, b) => a.y - b.y);
+    for (let p of sortedPlatforms) {
+        if (p.y > currentY) {
+            return p.y;
+        }
+    }
+    return currentY;
 }
 
 io.on('connection', (socket) => {
     console.log('新连接:', socket.id);
     
+    // 房间满判断
     if (players.length >= 2) {
         socket.emit('room_full');
         return;
@@ -85,15 +122,8 @@ io.on('connection', (socket) => {
         blueConnected: players.some(p => p.color === 'blue'),
         redConnected: players.some(p => p.color === 'red')
     });
-    socket.on('move_down', () => {
-    if (gameActive && gameState.players[color]) {
-        const p = gameState.players[color];
-        // 向下移动：增加 Y 坐标，让角色掉到下层平台
-        p.y += 45;
-        p.velY = 0;
-        console.log('下平台:', color);
-    }
-});
+    
+    // 玩家准备
     socket.on('player_ready', () => {
         readyState[color] = true;
         console.log('玩家准备:', color);
@@ -105,6 +135,7 @@ io.on('connection', (socket) => {
         });
     });
     
+    // 开始游戏
     socket.on('start_game', () => {
         if (readyState.blue && readyState.red && players.length === 2) {
             console.log('===== 游戏开始！ =====');
@@ -115,75 +146,62 @@ io.on('connection', (socket) => {
                 bullets: gameState.bullets,
                 myColor: null
             });
-            console.log('发送初始游戏状态，玩家:', Object.keys(gameState.players));
+            console.log('发送初始游戏状态');
         }
     });
     
-socket.on('move', (data) => {
-    if (gameActive && gameState.players[color]) {
-        gameState.players[color].velX = data.velX || 0;
-        gameState.players[color].x += gameState.players[color].velX;
-        
-        // 边界限制
-        if (gameState.players[color].x < 20) gameState.players[color].x = 20;
-        if (gameState.players[color].x + 30 > 700) gameState.players[color].x = 700 - 30;
-        
-        if (gameState.players[color].velX !== 0) {
-            gameState.players[color].facingRight = gameState.players[color].velX > 0;
-        }
-    }
-});
-    socket.on('move_up', (data) => {
-    if (gameActive && gameState.players[color]) {
-        gameState.players[color].y = data.y;
-        console.log('上平台:', color, '新Y:', data.y);
-    }
-});
-
-socket.on('move_down', (data) => {
-    if (gameActive && gameState.players[color]) {
-        gameState.players[color].y = data.y;
-        console.log('下平台:', color, '新Y:', data.y);
-    }
-});
-    socket.on('jump', () => {
-        if (gameActive && gameState.players[color] && gameState.players[color].grounded) {
-            gameState.players[color].velY = -10;
-            gameState.players[color].grounded = false;
-            console.log('跳跃:', color);
-        }
-    });
-    
-    socket.on('shoot', () => {
+    // 移动
+    socket.on('move', (data) => {
         if (gameActive && gameState.players[color]) {
-            const p = gameState.players[color];
-            if (p.shootCooldown <= 0) {
-                p.shootCooldown = 20;
-                const direction = p.facingRight ? 1 : -1;
-                gameState.bullets.push({
-                    x: p.x + 15,
-                    y: p.y + 15,
-                    direction: direction,
-                    owner: color,
-                    damage: 8,
-                    knockback: 6,
-                    speed: 10
-                });
-                console.log('射击:', color);
-            }
+            gameState.players[color].x = data.x;
+            gameState.players[color].facingRight = data.facingRight;
         }
     });
+    
+    // 上平台
+    socket.on('move_up', (data) => {
+        if (gameActive && gameState.players[color]) {
+            gameState.players[color].y = data.y;
+            console.log('上平台:', color, '新Y:', data.y);
+        }
+    });
+    
+    // 下平台
+    socket.on('move_down', (data) => {
+        if (gameActive && gameState.players[color]) {
+            gameState.players[color].y = data.y;
+            console.log('下平台:', color, '新Y:', data.y);
+        }
+    });
+    
+    // 射击
+    socket.on('shoot', (data) => {
+        if (gameActive && gameState.players[color]) {
+            gameState.bullets.push({
+                x: data.x,
+                y: data.y,
+                direction: data.direction,
+                owner: color,
+                damage: 8,
+                speed: 8
+            });
+            console.log('射击:', color);
+        }
+    });
+    
+    // 请求游戏状态
     socket.on('request_game_state', () => {
-    console.log('请求游戏状态，当前 gameActive:', gameActive);
-    if (gameActive && gameState.players.blue && gameState.players.red) {
-        socket.emit('game_state', {
-            players: gameState.players,
-            bullets: gameState.bullets,
-            myColor: color
-        });
-        console.log('已发送游戏状态');
-    }
-});
+        if (gameActive && gameState.players.blue && gameState.players.red) {
+            socket.emit('game_state', {
+                players: gameState.players,
+                bullets: gameState.bullets,
+                myColor: color
+            });
+            console.log('发送游戏状态给:', color);
+        }
+    });
+    
+    // 返回房间
     socket.on('return_to_room', () => {
         console.log('返回房间');
         gameActive = false;
@@ -193,6 +211,7 @@ socket.on('move_down', (data) => {
         io.emit('redirect_to_room');
     });
     
+    // 断开连接
     socket.on('disconnect', () => {
         console.log('断开连接:', socket.id);
         players = players.filter(p => p.id !== socket.id);
@@ -206,7 +225,7 @@ socket.on('move_down', (data) => {
     });
 });
 
-// 游戏循环（物理更新）
+// 游戏循环 - 更新子弹和碰撞
 setInterval(() => {
     if (!gameActive) return;
     if (!gameState.players.blue || !gameState.players.red) return;
@@ -215,7 +234,9 @@ setInterval(() => {
     for (let i = 0; i < gameState.bullets.length; i++) {
         const b = gameState.bullets[i];
         b.x += b.speed * b.direction;
-        if (b.x < -50 || b.x > 800) {
+        
+        // 超出边界移除
+        if (b.x < -50 || b.x > 450) {
             gameState.bullets.splice(i, 1);
             i--;
             continue;
@@ -226,28 +247,35 @@ setInterval(() => {
             if (id !== b.owner) {
                 const p = gameState.players[id];
                 if (b.x < p.x + p.width && b.x + 8 > p.x &&
-                    b.y < p.y + p.height && b.y + 5 > p.y) {
+                    b.y < p.y + p.height && b.y + 4 > p.y) {
                     
                     p.hp -= b.damage;
-                    p.velX += b.knockback * b.direction;
                     gameState.bullets.splice(i, 1);
                     i--;
                     
+                    console.log('击中:', id, '剩余血量:', p.hp);
+                    
+                    // 死亡判断
                     if (p.hp <= 0) {
                         p.lives--;
+                        console.log('死亡:', id, '剩余生命:', p.lives);
+                        
                         if (p.lives <= 0) {
                             gameActive = false;
                             const winner = id === 'blue' ? 'red' : 'blue';
+                            console.log('游戏结束, 胜利者:', winner);
                             io.emit('game_over', { winner: winner });
                             return;
                         }
+                        
+                        // 重生
                         p.hp = p.maxHp;
                         if (id === 'blue') {
-                            p.x = 100;
-                            p.y = 300;
+                            p.x = 60;
+                            p.y = 440;
                         } else {
-                            p.x = 620;
-                            p.y = 300;
+                            p.x = 310;
+                            p.y = 440;
                         }
                     }
                     break;
@@ -256,54 +284,7 @@ setInterval(() => {
         }
     }
     
-    // 更新玩家物理
-    for (let id in gameState.players) {
-        const p = gameState.players[id];
-        p.velY += 0.8;
-        p.y += p.velY;
-        
-        // 平台碰撞
-        p.grounded = false;
-        for (let plat of PLATFORMS) {
-            if (p.x < plat.x + plat.width &&
-                p.x + p.width > plat.x &&
-                p.y + p.height > plat.y &&
-                p.y < plat.y + plat.height) {
-                
-                if (p.velY >= 0) {
-                    p.y = plat.y - p.height;
-                    p.velY = 0;
-                    p.grounded = true;
-                } else if (p.velY < 0) {
-                    p.y = plat.y + plat.height;
-                    p.velY = 0;
-                }
-            }
-        }
-        
-        // 掉落死亡
-        if (p.y > 650) {
-            p.lives--;
-            if (p.lives <= 0) {
-                gameActive = false;
-                const winner = id === 'blue' ? 'red' : 'blue';
-                io.emit('game_over', { winner: winner });
-                return;
-            }
-            p.hp = p.maxHp;
-            if (id === 'blue') {
-                p.x = 100;
-                p.y = 300;
-            } else {
-                p.x = 620;
-                p.y = 300;
-            }
-        }
-        
-        if (p.shootCooldown > 0) p.shootCooldown--;
-    }
-    
-    // 广播更新
+    // 广播游戏状态
     io.emit('game_state', {
         players: gameState.players,
         bullets: gameState.bullets,
@@ -314,4 +295,5 @@ setInterval(() => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ 混乱大枪战服务器运行在端口 ${PORT}`);
+    console.log(`🌐 访问地址: http://localhost:${PORT}`);
 });
