@@ -5,93 +5,81 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server, {
-    cors: { origin: "*" }
-});
+const io = socketIo(server, { cors: { origin: "*" } });
 
-app.use(express.static(path.join(__dirname)));
-app.use('/js', express.static(path.join(__dirname, 'js')));
+// 静态文件
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/shared', express.static(path.join(__dirname, 'shared')));
 
-// 房间状态
+// 游戏状态
 let players = [];
-let readyState = { p1: false, p2: false };
+let readyState = { blue: false, red: false };
 let gameActive = false;
+
+// 玩家类（服务器端简化版）
+class ServerPlayer {
+    constructor(x, y, color, name) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 30;
+        this.color = color;
+        this.name = name;
+        this.hp = 30;
+        this.maxHp = 30;
+        this.lives = 3;
+        this.velX = 0;
+        this.velY = 0;
+        this.grounded = true;
+        this.facingRight = (color === 'blue');
+        this.shootCooldown = 0;
+    }
+    
+    respawn() {
+        this.x = this.color === 'blue' ? 100 : 620;
+        this.y = 300;
+        this.hp = this.maxHp;
+        this.velX = 0;
+        this.velY = 0;
+    }
+}
+
 let gameState = {
     players: {},
     bullets: []
 };
 
-// 游戏参数
-const GRAVITY = 0.8;
-const JUMP_POWER = -12;
+// 平台定义
+const PLATFORMS = [
+    { x: 0, y: 590, width: 750, height: 15 },
+    { x: 50, y: 520, width: 130, height: 12 },
+    { x: 570, y: 520, width: 130, height: 12 },
+    { x: 120, y: 440, width: 110, height: 12 },
+    { x: 520, y: 440, width: 110, height: 12 },
+    { x: 310, y: 360, width: 130, height: 12 },
+    { x: 310, y: 280, width: 130, height: 12 }
+];
 
-// 更新游戏
-function updateGame() {
-    if (!gameActive) return;
-    
-    // 更新子弹
-    gameState.bullets = gameState.bullets.filter(b => {
-        b.x += b.speed * b.direction;
-        return b.x > 0 && b.x < 2000;
-    });
-    
-    // 子弹碰撞检测
-    for (let i = 0; i < gameState.bullets.length; i++) {
-        const bullet = gameState.bullets[i];
-        for (let id in gameState.players) {
-            if (id !== bullet.owner) {
-                const p = gameState.players[id];
-                if (bullet.x < p.x + p.width && bullet.x + 8 > p.x &&
-                    bullet.y < p.y + p.height && bullet.y + 5 > p.y) {
-                    
-                    p.hp -= bullet.damage;
-                    p.velocityX += bullet.knockback * bullet.direction;
-                    gameState.bullets.splice(i, 1);
-                    
-                    // 死亡判定
-                    if (p.hp <= 0) {
-                        p.lives--;
-                        if (p.lives <= 0) {
-                            gameActive = false;
-                            io.emit('game_over', { winner: id === 'blue' ? 'red' : 'blue' });
-                            return;
-                        }
-                        p.hp = p.maxHp;
-                        p.respawn();
-                    }
-                    break;
-                }
+// 碰撞检测
+function checkCollision(player, platforms) {
+    player.grounded = false;
+    for (let p of platforms) {
+        if (player.x < p.x + p.width &&
+            player.x + player.width > p.x &&
+            player.y + player.height > p.y &&
+            player.y < p.y + p.height) {
+            
+            if (player.velY >= 0 && player.y + player.height - player.velY <= p.y) {
+                player.y = p.y - player.height;
+                player.velY = 0;
+                player.grounded = true;
+            } else if (player.velY < 0) {
+                player.y = p.y + p.height;
+                player.velY = 0;
             }
         }
     }
-    
-    // 更新玩家位置
-    for (let id in gameState.players) {
-        const p = gameState.players[id];
-        p.velocityY += GRAVITY;
-        p.x += p.velocityX;
-        p.y += p.velocityY;
-        
-        // 简化碰撞（完整版需要平台碰撞）
-        if (p.y > 600) {
-            p.lives--;
-            if (p.lives <= 0) {
-                gameActive = false;
-                io.emit('game_over', { winner: id === 'blue' ? 'red' : 'blue' });
-                return;
-            }
-            p.hp = p.maxHp;
-            p.respawn();
-        }
-        
-        if (p.x < 0) p.x = 0;
-        if (p.x + p.width > 1200) p.x = 1200 - p.width;
-    }
-    
-    io.emit('game_state', { players: gameState.players, bullets: gameState.bullets, myColor: null });
 }
-
-setInterval(updateGame, 1000 / 60);
 
 io.on('connection', (socket) => {
     console.log('新连接:', socket.id);
@@ -102,66 +90,85 @@ io.on('connection', (socket) => {
     }
     
     const color = players.length === 0 ? 'blue' : 'red';
-    const startX = color === 'blue' ? 100 : 700;
-    const name = color === 'blue' ? '蓝方' : '红方';
-    
-    players.push({ id: socket.id, color, name });
+    players.push({ id: socket.id, color });
     socket.emit('role_assign', { color });
     
-    // 等待界面
-    io.emit('room_state', { p1Ready: readyState.p1, p2Ready: readyState.p2, p1Connected: players.length >= 1, p2Connected: players.length >= 2 });
+    io.emit('room_state', {
+        blueReady: readyState.blue,
+        redReady: readyState.red,
+        blueConnected: players.some(p => p.color === 'blue'),
+        redConnected: players.some(p => p.color === 'red')
+    });
     
     socket.on('player_ready', () => {
-        if (color === 'blue') readyState.p1 = true;
-        else readyState.p2 = true;
-        io.emit('room_state', { p1Ready: readyState.p1, p2Ready: readyState.p2, p1Connected: true, p2Connected: players.length >= 2 });
+        readyState[color] = true;
+        io.emit('room_state', {
+            blueReady: readyState.blue,
+            redReady: readyState.red,
+            blueConnected: true,
+            redConnected: true
+        });
     });
     
     socket.on('start_game', () => {
-        if (readyState.p1 && readyState.p2 && players.length === 2) {
+        if (readyState.blue && readyState.red && players.length === 2) {
             gameActive = true;
             gameState = {
                 players: {
-                    blue: new (require('./js/player.js'))(100, 300, 'blue', '蓝方'),
-                    red: new (require('./js/player.js'))(700, 300, 'red', '红方')
+                    blue: new ServerPlayer(100, 300, 'blue', '蓝方'),
+                    red: new ServerPlayer(620, 300, 'red', '红方')
                 },
                 bullets: []
             };
             io.emit('game_start');
-            io.emit('game_state', { players: gameState.players, bullets: [], myColor: null });
+            io.emit('game_state', {
+                players: gameState.players,
+                bullets: gameState.bullets,
+                myColor: null
+            });
         }
     });
     
     socket.on('move', (data) => {
-        if (gameState.players[color]) {
-            gameState.players[color].x = data.x;
-            gameState.players[color].y = data.y;
-            gameState.players[color].velocityX = data.velocityX;
-        }
-    });
-    
-    socket.on('shoot', () => {
-        if (gameState.players[color]) {
-            const bullet = gameState.players[color].shoot();
-            if (bullet) gameState.bullets.push(bullet);
+        if (gameActive && gameState.players[color]) {
+            gameState.players[color].velX = data.velX || 0;
+            gameState.players[color].x += gameState.players[color].velX;
+            if (gameState.players[color].x < 20) gameState.players[color].x = 20;
+            if (gameState.players[color].x + 30 > 730) gameState.players[color].x = 730 - 30;
         }
     });
     
     socket.on('jump', () => {
-        if (gameState.players[color] && gameState.players[color].grounded) {
-            gameState.players[color].velocityY = JUMP_POWER;
+        if (gameActive && gameState.players[color] && gameState.players[color].grounded) {
+            gameState.players[color].velY = -10;
             gameState.players[color].grounded = false;
+        }
+    });
+    
+    socket.on('shoot', () => {
+        if (gameActive && gameState.players[color]) {
+            const p = gameState.players[color];
+            if (p.shootCooldown <= 0) {
+                p.shootCooldown = 20;
+                const direction = p.facingRight ? 1 : -1;
+                gameState.bullets.push({
+                    x: p.x + 15,
+                    y: p.y + 15,
+                    direction: direction,
+                    owner: color,
+                    damage: 8,
+                    knockback: 6,
+                    speed: 10
+                });
+            }
         }
     });
     
     socket.on('return_to_room', () => {
         gameActive = false;
-        readyState = { p1: false, p2: false };
+        readyState = { blue: false, red: false };
+        players = [];
         socket.emit('redirect_to_room');
     });
     
-    socket.on('disconnect', () => {
-        players = players.filter(p => p.id !== socket.id);
-        if (color === 'blue') readyState.p1 = false;
-        else readyState.p2 = false;
-        io.emit('room_state', { p1Ready: readyState.p
+    socket.on('
