@@ -40,7 +40,9 @@ class Network {
     sendMove(velX) {
         this.socket.emit('move', { velX });
     }
-    
+    sendMoveDown() {
+    this.socket.emit('move_down');
+}
     sendJump() {
         this.socket.emit('jump');
     }
