@@ -133,6 +133,19 @@ socket.on('move', (data) => {
         }
     }
 });
+    socket.on('move_up', (data) => {
+    if (gameActive && gameState.players[color]) {
+        gameState.players[color].y = data.y;
+        console.log('上平台:', color, '新Y:', data.y);
+    }
+});
+
+socket.on('move_down', (data) => {
+    if (gameActive && gameState.players[color]) {
+        gameState.players[color].y = data.y;
+        console.log('下平台:', color, '新Y:', data.y);
+    }
+});
     socket.on('jump', () => {
         if (gameActive && gameState.players[color] && gameState.players[color].grounded) {
             gameState.players[color].velY = -10;
