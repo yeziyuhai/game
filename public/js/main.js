@@ -11,7 +11,12 @@
         initRoom();
     }
 })();
-
+function initGame() {
+    console.log('初始化游戏对战...');
+    console.log('PLATFORMS:', typeof PLATFORMS, PLATFORMS);
+    
+    // ... 后面保持原有代码
+}
 function initRoom() {
     console.log('初始化房间...');
     const network = new Network();
