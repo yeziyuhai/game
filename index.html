@@ -2,8 +2,8 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>双人五子棋·联机对战</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>混乱大枪战 - 房间</title>
     <style>
         * {
             margin: 0;
@@ -13,483 +13,240 @@
         }
 
         body {
-            background: linear-gradient(135deg, #2c3e2f 0%, #1a3a1a 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
-            padding: 20px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
         }
 
-        .game-container {
-            max-width: 600px;
-            width: 100%;
-            background: rgba(210, 180, 140, 0.3);
-            backdrop-filter: blur(5px);
+        .room-container {
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(10px);
             border-radius: 48px;
-            padding: 20px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.4);
-        }
-
-        /* 玩家信息栏 */
-        .players-bar {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .player-badge {
-            flex: 1;
-            background: rgba(0,0,0,0.5);
-            border-radius: 60px;
-            padding: 12px 15px;
+            padding: 30px;
             text-align: center;
-            backdrop-filter: blur(5px);
-            transition: all 0.3s;
+            min-width: 300px;
         }
 
-        .player-badge.black {
-            border: 2px solid #333;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        h1 {
+            color: #ffd700;
+            margin-bottom: 30px;
+            font-size: 2rem;
         }
 
-        .player-badge.white {
-            border: 2px solid #f5f5f5;
-            box-shadow: 0 0 10px rgba(255,255,255,0.3);
+        .players {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 30px;
         }
 
-        .player-badge.current {
-            transform: scale(1.03);
-            background: rgba(255,215,0,0.3);
-            box-shadow: 0 0 20px gold;
+        .player-slot {
+            background: rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 20px 30px;
+            text-align: center;
         }
 
-        .player-name {
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .black .player-name { color: #333; }
-        .white .player-name { color: #f5f5f5; }
-
-        .player-stone {
-            font-size: 1.8rem;
-            margin-top: 5px;
-        }
-
-        /* 棋盘 */
-        .board-container {
-            background: #deb887;
-            border-radius: 16px;
-            padding: 15px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 10px 20px rgba(0,0,0,0.3);
-        }
-
-        .board {
-            display: grid;
-            grid-template-columns: repeat(15, 1fr);
-            aspect-ratio: 1 / 1;
-            background: #e8c99e;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        .cell {
+        .player-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 0 auto 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            position: relative;
-            transition: all 0.05s;
+            font-size: 3rem;
         }
 
-        .cell::before {
-            content: '';
-            position: absolute;
-            width: 2px;
-            height: 100%;
-            background: #8b6914;
-            left: 50%;
-            top: 0;
-            transform: translateX(-50%);
+        .player-avatar.blue {
+            background: linear-gradient(135deg, #4a90d9, #2c5aa0);
+            box-shadow: 0 0 20px rgba(74,144,217,0.5);
         }
 
-        .cell::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 2px;
-            background: #8b6914;
-            top: 50%;
-            left: 0;
-            transform: translateY(-50%);
+        .player-avatar.red {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 0 20px rgba(231,76,60,0.5);
         }
 
-        /* 角落的格子去掉多余的线 */
-        .cell:first-child::before { display: none; }
-        .cell:first-child::after { width: 50%; left: auto; right: 0; }
-        .cell:last-child::before { width: 50%; left: 0; }
-        .cell:last-child::after { width: 50%; }
-
-        /* 棋子样式 */
-        .stone {
-            width: 85%;
-            height: 85%;
-            border-radius: 50%;
-            position: relative;
-            z-index: 10;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            transition: all 0.1s ease;
-            animation: drop 0.2s ease;
-        }
-
-        @keyframes drop {
-            0% { transform: scale(0); opacity: 0; }
-            80% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-
-        .stone.black {
-            background: radial-gradient(circle at 35% 35%, #444, #111);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
-
-        .stone.white {
-            background: radial-gradient(circle at 35% 35%, #fff, #ccc);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-
-        /* 胜利高亮 */
-        .winning-stone {
-            box-shadow: 0 0 0 3px gold, 0 0 0 6px #ff6600;
-            animation: pulse 0.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 3px gold, 0 0 0 6px #ff6600; }
-            50% { box-shadow: 0 0 0 5px #ffcc00, 0 0 0 10px #ff3300; }
-        }
-
-        /* 状态栏 */
-        .status-bar {
-            background: rgba(0,0,0,0.6);
-            border-radius: 40px;
-            padding: 12px 20px;
-            margin: 15px 0;
-            text-align: center;
+        .player-name {
             color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
         }
 
-        .reset-btn {
-            width: 100%;
+        .ready-status {
+            font-size: 0.9rem;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.5);
+        }
+
+        .ready-status.ready {
+            background: #27ae60;
+            color: white;
+        }
+
+        .ready-status.not-ready {
+            background: #7f8c8d;
+            color: #ddd;
+        }
+
+        .ready-btn, .start-btn {
             background: linear-gradient(135deg, #5f27cd, #341f97);
-            padding: 14px;
+            border: none;
+            padding: 12px 30px;
             border-radius: 40px;
-            font-size: 1rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: white;
-            border: none;
             cursor: pointer;
-            margin-top: 10px;
+            margin: 10px;
+            transition: all 0.1s;
         }
 
-        .reset-btn:active {
+        .ready-btn:active, .start-btn:active {
             transform: scale(0.98);
         }
 
-        .connection-status {
-            text-align: center;
-            font-size: 0.75rem;
-            color: #ffd700;
-            margin-bottom: 12px;
-            padding: 5px;
-            background: rgba(0,0,0,0.4);
-            border-radius: 20px;
+        .ready-btn.ready {
+            background: linear-gradient(135deg, #27ae60, #1e8449);
         }
 
-        @media (max-width: 550px) {
-            .player-name { font-size: 0.9rem; }
-            .player-stone { font-size: 1.2rem; }
+        .start-btn {
+            background: linear-gradient(135deg, #e67e22, #d35400);
+        }
+
+        .start-btn:disabled {
+            opacity: 0.5;
+            transform: none;
+        }
+
+        .waiting-text {
+            color: #ffd700;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+
+        .connection-status {
+            color: #4ecdc4;
+            margin-bottom: 20px;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
-<div class="game-container">
+<div class="room-container">
+    <h1>🎮 混乱大枪战</h1>
     <div class="connection-status" id="connectionStatus">🔄 连接中...</div>
 
-    <div class="players-bar">
-        <div class="player-badge black" id="blackBadge">
-            <div class="player-name">⚫ 黑棋</div>
-            <div class="player-stone" id="blackName">等待...</div>
+    <div class="players">
+        <div class="player-slot" id="p1Slot">
+            <div class="player-avatar blue">🔵</div>
+            <div class="player-name">蓝方玩家</div>
+            <div class="ready-status not-ready" id="p1Ready">未准备</div>
         </div>
-        <div class="player-badge white" id="whiteBadge">
-            <div class="player-name">⚪ 白棋</div>
-            <div class="player-stone" id="whiteName">等待...</div>
+        <div class="player-slot" id="p2Slot">
+            <div class="player-avatar red">🔴</div>
+            <div class="player-name">红方玩家</div>
+            <div class="ready-status not-ready" id="p2Ready">未准备</div>
         </div>
     </div>
 
-    <div class="board-container">
-        <div class="board" id="board"></div>
-    </div>
-
-    <div class="status-bar" id="statusBar">
-        🎲 等待对手连接...
-    </div>
-
-    <button class="reset-btn" id="resetBtn">🔄 新的一局</button>
+    <button class="ready-btn" id="readyBtn">✅ 准备</button>
+    <button class="start-btn" id="startBtn" disabled>🎯 开始游戏</button>
+    <div class="waiting-text" id="waitingText">等待第二名玩家加入...</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
     const socket = io();
     
-    // 棋盘配置
-    const BOARD_SIZE = 15;
-    let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
-    let gameActive = true;
-    let currentPlayer = 'black'; // black 先手
-    let myColor = null; // 'black' 或 'white'
-    let players = { black: null, white: null };
-    let winLine = []; // 胜利的棋子位置
+    let myColor = null;
+    let isReady = false;
+    let bothPlayersReady = false;
     
-    // DOM 元素
-    const boardElement = document.getElementById('board');
-    const statusBar = document.getElementById('statusBar');
-    const resetBtn = document.getElementById('resetBtn');
+    const p1ReadySpan = document.getElementById('p1Ready');
+    const p2ReadySpan = document.getElementById('p2Ready');
+    const readyBtn = document.getElementById('readyBtn');
+    const startBtn = document.getElementById('startBtn');
     const connectionStatus = document.getElementById('connectionStatus');
-    const blackNameSpan = document.getElementById('blackName');
-    const whiteNameSpan = document.getElementById('whiteName');
-    const blackBadge = document.getElementById('blackBadge');
-    const whiteBadge = document.getElementById('whiteBadge');
+    const waitingText = document.getElementById('waitingText');
     
-    // 检查五子连珠
-    function checkWin(row, col, color) {
-        // 四个方向: 水平, 垂直, 对角线/, 对角线\
-        const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
-        
-        for (let [dx, dy] of directions) {
-            let count = 1;
-            let positions = [[row, col]];
-            
-            // 正方向
-            for (let step = 1; step <= 5; step++) {
-                const newRow = row + dx * step;
-                const newCol = col + dy * step;
-                if (newRow < 0 || newRow >= BOARD_SIZE || newCol < 0 || newCol >= BOARD_SIZE) break;
-                if (board[newRow][newCol] === color) {
-                    count++;
-                    positions.push([newRow, newCol]);
-                } else break;
-            }
-            
-            // 反方向
-            for (let step = 1; step <= 5; step++) {
-                const newRow = row - dx * step;
-                const newCol = col - dy * step;
-                if (newRow < 0 || newRow >= BOARD_SIZE || newCol < 0 || newCol >= BOARD_SIZE) break;
-                if (board[newRow][newCol] === color) {
-                    count++;
-                    positions.push([newRow, newCol]);
-                } else break;
-            }
-            
-            if (count >= 5) {
-                return positions;
-            }
-        }
-        return null;
-    }
-    
-    // 渲染棋盘
-    function renderBoard() {
-        boardElement.innerHTML = '';
-        
-        for (let i = 0; i < BOARD_SIZE; i++) {
-            for (let j = 0; j < BOARD_SIZE; j++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.dataset.row = i;
-                cell.dataset.col = j;
-                
-                if (board[i][j]) {
-                    const stone = document.createElement('div');
-                    stone.className = `stone ${board[i][j]}`;
-                    
-                    // 高亮胜利棋子
-                    if (winLine.some(pos => pos[0] === i && pos[1] === j)) {
-                        stone.classList.add('winning-stone');
-                    }
-                    cell.appendChild(stone);
-                }
-                
-                cell.addEventListener('click', () => makeMove(i, j));
-                boardElement.appendChild(cell);
-            }
-        }
-        
-        // 更新回合高亮
-        if (currentPlayer === 'black') {
-            blackBadge.classList.add('current');
-            whiteBadge.classList.remove('current');
+    // 更新UI
+    function updateUI(state) {
+        if (state.p1Ready) {
+            p1ReadySpan.textContent = '✓ 已准备';
+            p1ReadySpan.className = 'ready-status ready';
         } else {
-            whiteBadge.classList.add('current');
-            blackBadge.classList.remove('current');
+            p1ReadySpan.textContent = '未准备';
+            p1ReadySpan.className = 'ready-status not-ready';
+        }
+        
+        if (state.p2Ready) {
+            p2ReadySpan.textContent = '✓ 已准备';
+            p2ReadySpan.className = 'ready-status ready';
+        } else {
+            p2ReadySpan.textContent = '未准备';
+            p2ReadySpan.className = 'ready-status not-ready';
+        }
+        
+        bothPlayersReady = state.p1Ready && state.p2Ready;
+        
+        if (myColor === 'blue' && bothPlayersReady) {
+            startBtn.disabled = false;
+        } else {
+            startBtn.disabled = true;
+        }
+        
+        if (state.p1Connected && state.p2Connected) {
+            waitingText.textContent = '两名玩家已就绪，准备开始！';
+        } else {
+            waitingText.textContent = '等待第二名玩家加入...';
         }
     }
     
-    // 落子
-    function makeMove(row, col) {
-        if (!gameActive) {
-            statusBar.innerText = '🏆 游戏已结束，请重置';
-            return;
-        }
-        
-        if (!myColor) {
-            statusBar.innerText = '⏳ 等待对手连接...';
-            return;
-        }
-        
-        if (currentPlayer !== myColor) {
-            statusBar.innerText = `⏳ 等待 ${currentPlayer === 'black' ? '黑棋' : '白棋'} 落子...`;
-            return;
-        }
-        
-        if (board[row][col] !== null) {
-            statusBar.innerText = '❌ 这个位置已经有棋子了';
-            return;
-        }
-        
-        // 发送落子
-        socket.emit('move', {
-            row: row,
-            col: col,
-            color: myColor
-        });
-    }
-    
-    // 执行落子（由服务器广播）
-    function executeMove(row, col, color) {
-        board[row][col] = color;
-        
-        // 检查胜利
-        const winPositions = checkWin(row, col, color);
-        if (winPositions) {
-            winLine = winPositions;
-            gameActive = false;
-            const winner = color === 'black' ? '⚫ 黑棋胜利！' : '⚪ 白棋胜利！';
-            statusBar.innerText = `🎉 ${winner} 🎉`;
-            renderBoard();
-            
-            socket.emit('game_over', { winner: color });
-            return;
-        }
-        
-        // 切换玩家
-        currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
-        
-        // 更新状态栏
-        if (gameActive) {
-            statusBar.innerText = currentPlayer === 'black' ? '⚫ 黑棋回合' : '⚪ 白棋回合';
-        }
-        
-        renderBoard();
-        
-        // 广播更新
-        socket.emit('sync_game', {
-            board: board,
-            currentPlayer: currentPlayer,
-            gameActive: gameActive,
-            winLine: winLine
-        });
-    }
-    
-    // 重置游戏
-    function resetGame() {
-        board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
-        gameActive = true;
-        currentPlayer = 'black';
-        winLine = [];
-        renderBoard();
-        statusBar.innerText = myColor === 'black' ? '⚫ 你的回合（黑棋先手）' : '⚪ 等待对手落子';
-        
-        socket.emit('reset_game');
-    }
-    
-    // Socket 事件
+    // Socket事件
     socket.on('connect', () => {
-        connectionStatus.innerHTML = '✅ 已连接，等待分配角色...';
+        connectionStatus.innerHTML = '✅ 已连接';
     });
     
     socket.on('role_assign', (data) => {
         myColor = data.color;
-        const roleName = myColor === 'black' ? '黑棋 (先手)' : '白棋 (后手)';
-        connectionStatus.innerHTML = `🎮 你是 ${roleName}`;
-        statusBar.innerText = myColor === 'black' ? '⚫ 你的回合，点击棋盘落子' : '⚪ 等待对手先手';
-        
-        if (myColor === 'black') {
-            blackNameSpan.innerHTML = '你 ⚫';
-            whiteNameSpan.innerHTML = '等待对手...';
-        } else {
-            whiteNameSpan.innerHTML = '你 ⚪';
-            blackNameSpan.innerHTML = '等待对手...';
+        connectionStatus.innerHTML = `你是 ${myColor === 'blue' ? '🔵 蓝方' : '🔴 红方'}`;
+    });
+    
+    socket.on('room_state', (state) => {
+        updateUI(state);
+    });
+    
+    socket.on('game_start', () => {
+        // 跳转到游戏页面
+        window.location.href = '/game.html';
+    });
+    
+    socket.on('waiting', () => {
+        waitingText.textContent = '等待第二名玩家加入...';
+    });
+    
+    // 准备按钮
+    readyBtn.onclick = () => {
+        if (!isReady) {
+            isReady = true;
+            socket.emit('player_ready');
+            readyBtn.textContent = '✅ 已准备';
+            readyBtn.classList.add('ready');
         }
-    });
-    
-    socket.on('players_ready', (data) => {
-        connectionStatus.innerHTML = '🎌 两名玩家已就绪！黑棋先手';
-        statusBar.innerText = myColor === 'black' ? '⚫ 你的回合' : '⚪ 等待对手落子';
-        
-        if (data.black) blackNameSpan.innerHTML = data.black;
-        if (data.white) whiteNameSpan.innerHTML = data.white;
-    });
-    
-    socket.on('opponent_move', (data) => {
-        executeMove(data.row, data.col, data.color);
-    });
-    
-    socket.on('game_sync', (data) => {
-        board = data.board;
-        currentPlayer = data.currentPlayer;
-        gameActive = data.gameActive;
-        winLine = data.winLine || [];
-        renderBoard();
-        
-        if (gameActive) {
-            if (currentPlayer === myColor) {
-                statusBar.innerText = '🎯 你的回合';
-            } else {
-                statusBar.innerText = `⏳ 等待 ${currentPlayer === 'black' ? '黑棋' : '白棋'} 落子`;
-            }
-        }
-    });
-    
-    socket.on('waiting_for_player', () => {
-        connectionStatus.innerHTML = '⏳ 等待第二名玩家加入...';
-        statusBar.innerText = '等待对手连接...';
-    });
-    
-    socket.on('room_full', () => {
-        connectionStatus.innerHTML = '❌ 房间已满';
-        statusBar.innerText = '房间已满，请稍后重试';
-    });
-    
-    socket.on('player_disconnected', () => {
-        connectionStatus.innerHTML = '⚠️ 对手已断开连接';
-        statusBar.innerText = '对手离开了，等待重新连接...';
-        gameActive = false;
-    });
-    
-    // 重置按钮
-    resetBtn.onclick = () => {
-        resetGame();
     };
     
-    // 初始化空棋盘
-    renderBoard();
+    // 开始按钮（只有蓝方可见）
+    startBtn.onclick = () => {
+        if (myColor === 'blue' && bothPlayersReady) {
+            socket.emit('start_game');
+        }
+    };
 </script>
 </body>
 </html>
