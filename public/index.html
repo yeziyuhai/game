@@ -3,48 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- 强制横屏 -->
+    <!-- 尝试强制横屏 -->
     <meta name="screen-orientation" content="landscape">
     <meta name="x5-orientation" content="landscape">
     <meta name="full-screen" content="yes">
     <title>混乱大枪战 - 房间</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body { 
             background: #0a0f1e; 
             overflow: hidden; 
             position: fixed; 
             width: 100%; 
             height: 100%;
-            /* 横屏提示 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
-        /* 横屏检测提醒 */
-        .orientation-warning {
-            display: none;
+        /* 强制横屏容器 - 旋转90度 */
+        .landscape-container {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            color: white;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            font-size: 1.5rem;
-            text-align: center;
+            width: 100vh;  /* 宽度 = 屏幕高度 */
+            height: 100vw; /* 高度 = 屏幕宽度 */
+            transform-origin: top left;
+            transform: rotate(90deg) translateY(-100%);
         }
         
-        @media (orientation: portrait) {
-            .orientation-warning {
-                display: flex;
-            }
-            .game-container {
-                display: none;
+        /* 针对不同屏幕方向的修正 */
+        @media (orientation: landscape) {
+            .landscape-container {
+                width: 100vw;
+                height: 100vh;
+                transform: rotate(0deg) translateY(0);
             }
         }
         
@@ -53,8 +44,7 @@
             top: 0; 
             left: 0; 
             width: 100%; 
-            height: 100%; 
-            object-fit: contain;
+            height: 100%;
         }
         
         .room-panel {
@@ -94,14 +84,22 @@
         .start-btn { background: #e67e22; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         .waiting { color: #ffd700; margin-top: 15px; font-size: 0.85rem; }
+        
+        /* 简单提示 */
+        .tip {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #888;
+            font-size: 0.7rem;
+            z-index: 20;
+        }
     </style>
 </head>
 <body>
-<div class="orientation-warning">
-    ⚠️ 请将手机横屏以获得最佳体验 ⚠️
-</div>
-
-<div class="game-container">
+<div class="landscape-container">
     <canvas id="gameCanvas"></canvas>
     
     <div class="room-panel">
@@ -122,6 +120,7 @@
         </div>
         <div id="waiting" class="waiting">等待第二名玩家...</div>
     </div>
+    <div class="tip">🎮 横屏游戏 | 等待对手加入</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
