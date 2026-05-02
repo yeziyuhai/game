@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>联机游戏 - 准备就绪</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .status {
+            color: #10b981;
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 10px;
+            background: #f0fdf4;
+            border-radius: 10px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover { background: #5a67d8; }
+        #message {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 双人联机游戏</h1>
+        <div class="status">✅ 服务器连接成功！</div>
+        <button id="testBtn">点击测试通讯</button>
+        <div id="message">等待操作...</div>
+        <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            两人同时打开这个页面即可联机
+        </p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const testBtn = document.getElementById('testBtn');
+        const messageDiv = document.getElementById('message');
+
+        socket.on('connect', () => {
+            messageDiv.innerHTML = '✅ 已连接到服务器！';
+            messageDiv.style.background = '#d1fae5';
+        });
+
+        socket.on('server_response', (data) => {
+            messageDiv.innerHTML = `📨 收到服务器消息: ${data.msg}`;
+            messageDiv.style.background = '#dbeafe';
+        });
+
+        testBtn.onclick = () => {
+            socket.emit('client_message', { text: 'Hello from client!' });
+            messageDiv.innerHTML = '📤 消息已发送到服务器...';
+            messageDiv.style.background = '#fef3c7';
+        };
+    </script>
+</body>
+</html>
