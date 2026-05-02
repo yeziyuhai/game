@@ -119,20 +119,20 @@ io.on('connection', (socket) => {
         }
     });
     
-    socket.on('move', (data) => {
-        if (gameActive && gameState.players[color]) {
-            gameState.players[color].velX = data.velX || 0;
-            gameState.players[color].x += gameState.players[color].velX;
-            
-            if (gameState.players[color].x < 20) gameState.players[color].x = 20;
-            if (gameState.players[color].x + 30 > 720) gameState.players[color].x = 720 - 30;
-            
-            if (gameState.players[color].velX !== 0) {
-                gameState.players[color].facingRight = gameState.players[color].velX > 0;
-            }
+socket.on('move', (data) => {
+    if (gameActive && gameState.players[color]) {
+        gameState.players[color].velX = data.velX || 0;
+        gameState.players[color].x += gameState.players[color].velX;
+        
+        // 边界限制
+        if (gameState.players[color].x < 20) gameState.players[color].x = 20;
+        if (gameState.players[color].x + 30 > 700) gameState.players[color].x = 700 - 30;
+        
+        if (gameState.players[color].velX !== 0) {
+            gameState.players[color].facingRight = gameState.players[color].velX > 0;
         }
-    });
-    
+    }
+});
     socket.on('jump', () => {
         if (gameActive && gameState.players[color] && gameState.players[color].grounded) {
             gameState.players[color].velY = -10;
