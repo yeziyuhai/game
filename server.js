@@ -152,7 +152,17 @@ io.on('connection', (socket) => {
             }
         }
     });
-    
+    socket.on('request_game_state', () => {
+    console.log('请求游戏状态，当前 gameActive:', gameActive);
+    if (gameActive && gameState.players.blue && gameState.players.red) {
+        socket.emit('game_state', {
+            players: gameState.players,
+            bullets: gameState.bullets,
+            myColor: color
+        });
+        console.log('已发送游戏状态');
+    }
+});
     socket.on('return_to_room', () => {
         console.log('返回房间');
         gameActive = false;
