@@ -9,38 +9,31 @@
     <title>混乱大枪战 - 对战</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; touch-action: none; }
+        
         body { 
             background: #0a0f1e; 
             overflow: hidden; 
             position: fixed; 
             width: 100%; 
             height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
         
-        .orientation-warning {
-            display: none;
+        /* 强制横屏容器 */
+        .landscape-container {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            color: white;
-            align-items: center;
-            justify-content: center;
-            z-index: 999;
-            font-size: 1.5rem;
+            width: 100vh;
+            height: 100vw;
+            transform-origin: top left;
+            transform: rotate(90deg) translateY(-100%);
         }
         
-        @media (orientation: portrait) {
-            .orientation-warning {
-                display: flex;
-            }
-            .game-container {
-                display: none;
+        @media (orientation: landscape) {
+            .landscape-container {
+                width: 100vw;
+                height: 100vh;
+                transform: rotate(0deg) translateY(0);
             }
         }
         
@@ -63,7 +56,7 @@
             padding: 0 20px;
             color: white;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.9rem;
             text-shadow: 1px 1px 0 black;
             z-index: 10;
             pointer-events: none;
@@ -142,13 +135,13 @@
             text-align: center;
             border: 2px solid gold;
         }
-        .result-card h1 { font-size: 2rem; margin-bottom: 15px; }
+        .result-card h1 { font-size: 1.8rem; margin-bottom: 15px; }
         .result-btn {
             background: #5f27cd;
             border: none;
             padding: 12px 30px;
             border-radius: 40px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             color: white;
             margin-top: 20px;
             cursor: pointer;
@@ -156,11 +149,7 @@
     </style>
 </head>
 <body>
-<div class="orientation-warning">
-    ⚠️ 请将手机横屏获得最佳体验 ⚠️
-</div>
-
-<div class="game-container">
+<div class="landscape-container">
     <canvas id="gameCanvas"></canvas>
 
     <div class="health-bars">
