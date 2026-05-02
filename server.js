@@ -171,4 +171,90 @@ io.on('connection', (socket) => {
         socket.emit('redirect_to_room');
     });
     
-    socket.on('
+    socket.on('disconnect', () => {
+        players = players.filter(p => p.id !== socket.id);
+        readyState[color] = false;
+        io.emit('room_state', {
+            blueReady: readyState.blue,
+            redReady: readyState.red,
+            blueConnected: players.some(p => p.color === 'blue'),
+            redConnected: players.some(p => p.color === 'red')
+        });
+    });
+});
+
+// 游戏循环
+setInterval(() => {
+    if (!gameActive) return;
+    
+    // 更新子弹
+    for (let i = 0; i < gameState.bullets.length; i++) {
+        const b = gameState.bullets[i];
+        b.x += b.speed * b.direction;
+        if (b.x < -50 || b.x > 800) {
+            gameState.bullets.splice(i, 1);
+            i--;
+            continue;
+        }
+        
+        for (let id in gameState.players) {
+            if (id !== b.owner) {
+                const p = gameState.players[id];
+                if (b.x < p.x + p.width && b.x + 8 > p.x &&
+                    b.y < p.y + p.height && b.y + 5 > p.y) {
+                    
+                    p.hp -= b.damage;
+                    p.velX += b.knockback * b.direction;
+                    gameState.bullets.splice(i, 1);
+                    i--;
+                    
+                    if (p.hp <= 0) {
+                        p.lives--;
+                        if (p.lives <= 0) {
+                            gameActive = false;
+                            io.emit('game_over', { winner: id === 'blue' ? 'red' : 'blue' });
+                            return;
+                        }
+                        p.hp = p.maxHp;
+                        p.respawn();
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
+    // 更新玩家
+    for (let id in gameState.players) {
+        const p = gameState.players[id];
+        p.velY += 0.8;
+        p.y += p.velY;
+        
+        checkCollision(p, PLATFORMS);
+        
+        if (p.y > 650) {
+            p.lives--;
+            if (p.lives <= 0) {
+                gameActive = false;
+                io.emit('game_over', { winner: id === 'blue' ? 'red' : 'blue' });
+                return;
+            }
+            p.hp = p.maxHp;
+            p.respawn();
+        }
+        
+        if (p.shootCooldown > 0) p.shootCooldown--;
+        if (p.velX !== 0) p.facingRight = p.velX > 0;
+    }
+    
+    io.emit('game_state', {
+        players: gameState.players,
+        bullets: gameState.bullets,
+        myColor: null
+    });
+}, 1000 / 60);
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ 混乱大枪战服务器运行在端口 ${PORT}`);
+});
